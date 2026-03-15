@@ -110,9 +110,14 @@ namespace CarCareTracker.Helper
                         if (!socTracker.TryGetValue(currentObject.SoC, out var prevSoCData))
                         {
                             // First time we see this SoC level — open a new segment.
-                            // Store mileage as the segment start. Consumption here is NOT included
-                            // in the accumulator — it brought the battery to this SoC level, just
-                            // like a fill-to-full entry starts the clock without counting its own kWh.
+                            // Consumption here is NOT included in its own accumulator (it marks the
+                            // start state), but IS added to all other open segment trackers since
+                            // that energy was consumed during their segments.
+                            foreach (var key in socTracker.Keys.ToList())
+                            {
+                                var t = socTracker[key];
+                                socTracker[key] = (t.accumulatedConsumption + convertedConsumption, t.lastSoCMileage);
+                            }
                             socTracker[currentObject.SoC] = (0, currentObject.Mileage);
                             gasRecordViewModel.MilesPerGallon = 0;
                         }
